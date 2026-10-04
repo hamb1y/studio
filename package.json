@@ -1,0 +1,17 @@
+{
+  "name": "studio",
+  "type": "module",
+  "version": "1.0.0",
+  "private": true,
+  "description": "One-page sales site for studio.rishimalnad.dev",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@lucide/astro": "^1.48.0",
+    "astro": "^7.3.5"
+  }
+}

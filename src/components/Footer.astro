@@ -1,0 +1,98 @@
+---
+import { FIVERR_URL, GITHUB_URL, OWNER, PORTFOLIO_URL } from "../config";
+
+const year = new Date().getFullYear();
+---
+<footer class="footer">
+  <div class="wrap footer-inner">
+    <div class="footer-brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <p>
+        <strong>studio</strong><span class="mono dim">.rishimalnad.dev</span>
+      </p>
+    </div>
+    <nav aria-label="Elsewhere">
+      <ul role="list" class="footer-links">
+        <li><a href={FIVERR_URL} rel="noopener" target="_blank">Fiverr</a></li>
+        <li><a href={GITHUB_URL} rel="noopener" target="_blank">GitHub</a></li>
+        <li><a href={PORTFOLIO_URL} rel="noopener" target="_blank">rishimalnad.dev</a></li>
+      </ul>
+    </nav>
+    <p class="footer-meta mono">
+      © {year} {OWNER}. Built with Astro and hand-written CSS. No trackers.
+    </p>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    border-top: 1px solid var(--line);
+    padding-block: 28px calc(28px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .footer-inner {
+    display: grid;
+    gap: 18px;
+    align-items: center;
+  }
+
+  .footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .brand-mark {
+    width: 10px;
+    height: 10px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  .footer-brand strong {
+    font-weight: 800;
+    font-stretch: 85%;
+    letter-spacing: -0.02em;
+  }
+
+  .dim {
+    color: var(--fg-3);
+  }
+
+  .footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+    margin: 0;
+  }
+
+  .footer-links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--fg-2);
+    text-decoration: none;
+    font-size: 0.9375rem;
+  }
+
+  .footer-links a:hover {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+
+  .footer-meta {
+    color: var(--fg-3);
+  }
+
+  @media (min-width: 900px) {
+    .footer-inner {
+      grid-template-columns: auto auto 1fr;
+      gap: 40px;
+    }
+
+    .footer-meta {
+      justify-self: end;
+      text-align: right;
+    }
+  }
+</style>

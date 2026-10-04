@@ -1,0 +1,240 @@
+---
+import ArrowUpRight from "@lucide/astro/icons/arrow-up-right";
+import Check from "@lucide/astro/icons/check";
+import { FIVERR_URL } from "../config";
+import { PACKAGES } from "../data/pricing";
+---
+
+<section class="section" id="packages" aria-labelledby="packages-title">
+  <div class="wrap">
+    <header class="sec-head">
+      <h2 id="packages-title">Packages</h2>
+      <p class="sec-intro">Fixed prices, ordered and paid on Fiverr. For something in between, use the estimator below.</p>
+    </header>
+
+    <div class="plans">
+      {
+        PACKAGES.map((p) => (
+          <article class:list={["plan", `plan--${p.id}`]} aria-labelledby={`plan-${p.id}`}>
+            <header class="plan-head">
+              <h3 id={`plan-${p.id}`}>{p.name}</h3>
+              <p class="plan-delivery mono">{p.deliveryDays}-day delivery</p>
+            </header>
+            <p class="plan-price">
+              <span class="cur">$</span>
+              {p.price}
+            </p>
+            <p class="plan-pitch">{p.pitch}</p>
+            <ul role="list" class="plan-list">
+              {p.features.map((f) => (
+                <li>
+                  <Check aria-hidden="true" />
+                  <span>{f}</span>
+                </li>
+              ))}
+            </ul>
+            <a
+              class:list={["btn", "btn--block", { "btn--primary": p.id === "business" }]}
+              href={FIVERR_URL}
+              rel="noopener"
+              target="_blank"
+            >
+              Order {p.name} <ArrowUpRight aria-hidden="true" />
+            </a>
+          </article>
+        ))
+      }
+
+      <article class="plan plan--custom" aria-labelledby="plan-custom">
+        <div class="custom-copy">
+          <h3 id="plan-custom">Fully custom</h3>
+          <p>Tell me exactly what you want built and I'll quote it.</p>
+        </div>
+        <a class="btn" href={FIVERR_URL} rel="noopener" target="_blank">
+          Ask for a quote <ArrowUpRight aria-hidden="true" />
+        </a>
+      </article>
+    </div>
+
+    <p class="note">
+      <strong>Hosting isn't included in any package, and neither is form management.</strong> Forms send to an inbox or
+      spreadsheet you choose, and you look after it. I can manage it for you at extra cost.
+    </p>
+  </div>
+</section>
+
+<style>
+  .plans {
+    display: grid;
+    gap: 16px;
+  }
+
+  .plan {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: clamp(24px, 3vw, 32px);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--bg-1);
+    min-width: 0;
+  }
+
+  .plan--business {
+    border-color: var(--accent-line);
+  }
+
+  .plan-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  h3 {
+    font-size: var(--t-lg);
+    font-weight: 700;
+    font-stretch: 85%;
+    letter-spacing: -0.02em;
+  }
+
+  .plan-delivery {
+    color: var(--fg-3);
+    white-space: nowrap;
+  }
+
+  .plan-price {
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+    font-family: var(--font-mono);
+    font-size: clamp(2.5rem, 2rem + 2vw, 3.5rem);
+    font-weight: 500;
+    font-stretch: 80%;
+    letter-spacing: -0.06em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .cur {
+    font-size: 0.45em;
+    margin-top: 0.2em;
+    color: var(--fg-3);
+    letter-spacing: 0;
+  }
+
+
+  .plan-pitch {
+    color: var(--fg-2);
+  }
+
+  .plan-list {
+    display: grid;
+    gap: 10px;
+    margin: 4px 0 8px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+    flex: 1;
+    align-content: start;
+  }
+
+  .plan-list li {
+    display: flex;
+    gap: 10px;
+    font-size: 0.9375rem;
+    line-height: 1.45;
+  }
+
+  .plan-list :global(svg) {
+    width: 16px;
+    height: 16px;
+    flex: none;
+    margin-top: 2px;
+    color: var(--accent);
+  }
+
+  .plan .btn {
+    white-space: normal;
+    text-align: center;
+  }
+
+  .plan--custom {
+    flex-direction: column;
+    align-items: flex-start;
+    border-style: dashed;
+    border-color: var(--line-2);
+    background: transparent;
+  }
+
+  .custom-copy {
+    display: grid;
+    gap: 6px;
+  }
+
+  .custom-copy p {
+    color: var(--fg-2);
+    font-size: var(--t-md);
+  }
+
+  .note {
+    margin-top: 20px;
+    color: var(--fg-2);
+    font-size: 0.9375rem;
+    max-width: 72ch;
+  }
+
+  .note strong {
+    color: var(--fg);
+    font-weight: 600;
+  }
+
+  @media (min-width: 760px) {
+    .plans {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .plan--brand {
+      grid-column: 1 / -1;
+    }
+
+    .plan--brand .plan-list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: 24px;
+    }
+
+
+    .plan--custom {
+      grid-column: 1 / -1;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .plan--custom .btn {
+      flex: none;
+      width: auto;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .plans {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .plan--brand {
+      grid-column: auto;
+    }
+
+    .plan--brand .plan-list {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    /* Two lines for every pitch, so the feature lists line up. */
+    .plan-pitch {
+      min-height: 3.2em;
+      min-height: 2lh;
+    }
+  }
+</style>

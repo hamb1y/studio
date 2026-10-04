@@ -1,0 +1,119 @@
+---
+const steps = [
+  {
+    title: "Brief",
+    body: "You message me on Fiverr with what you need. I ask a few questions and send a custom offer with the scope and price.",
+  },
+  {
+    title: "Your content",
+    body: "You send the text, photos and any logo files. If you need the words written, add copywriting to the order.",
+  },
+  {
+    title: "Build",
+    body: "I design and build the site around your content and check it on phone, tablet and desktop widths as I go.",
+  },
+  {
+    title: "Revisions",
+    body: "You try the site on your own phone and computer and send one list of changes per round.",
+  },
+  {
+    title: "Launch",
+    body: "You get the finished site and its code. If something I built breaks during your fix period, I fix it free.",
+  },
+];
+---
+
+<section class="section" id="process" aria-labelledby="process-title">
+  <div class="wrap">
+    <header class="sec-head">
+      <h2 id="process-title">How it works</h2>
+    </header>
+
+    <ol role="list" class="steps">
+      {
+        steps.map((s, i) => (
+          <li class="step">
+            <span class="step-num mono" aria-hidden="true">
+              {i + 1}
+            </span>
+            <div class="step-copy">
+              <h3>{s.title}</h3>
+              <p>{s.body}</p>
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</section>
+
+<style>
+  .steps {
+    display: grid;
+    margin: 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .step {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr);
+    align-content: start;
+    gap: 12px;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .step-num {
+    color: var(--accent);
+    font-size: 13px;
+    line-height: 1.9;
+  }
+
+  .step-copy {
+    display: grid;
+    gap: 4px;
+  }
+
+  h3 {
+    font-size: var(--t-lg);
+    font-weight: 700;
+    font-stretch: 85%;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+
+  .step-copy p {
+    color: var(--fg-2);
+    max-width: 52ch;
+  }
+
+  @media (min-width: 760px) and (max-width: 1279px) {
+    .step {
+      grid-template-columns: 28px minmax(0, 3fr) minmax(0, 8fr);
+      align-items: baseline;
+      padding: 22px 0;
+    }
+
+    .step-copy {
+      display: contents;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .steps {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 0 28px;
+    }
+
+    .step {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 10px;
+      padding: 20px 0 0;
+      border-bottom: 0;
+    }
+
+    .step-copy p {
+      font-size: 0.9375rem;
+    }
+  }
+</style>

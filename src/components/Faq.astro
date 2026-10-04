@@ -1,0 +1,127 @@
+---
+import Plus from "@lucide/astro/icons/plus";
+import { ADDONS, PACKAGES } from "../data/pricing";
+
+const [starter, business, brand] = PACKAGES;
+
+const faqs = [
+  {
+    q: "Who writes the text and supplies the photos?",
+    a: `You do. You send the words, photos and logo files for each page. If you want the text written for you, add copywriting and it goes into your custom offer.`,
+  },
+  {
+    q: "Who owns the website?",
+    a: `You do. Once the order is complete, the site, its code and its content are yours, and you can take them anywhere.`,
+  },
+  {
+    q: "How do revision rounds work?",
+    a: `You look over the site and send one list of everything you want changed. That list is one round. ${starter.name} includes ${starter.revisions} rounds, ${business.name} and ${brand.name} include ${business.revisions}, and extra rounds are $${ADDONS.revision} each.`,
+  },
+  {
+    q: "Where do form submissions go?",
+    a: `Wherever you want them, such as your email or a spreadsheet. You look after that end. If you'd rather I managed it, that costs extra.`,
+  },
+  {
+    q: "Is hosting included?",
+    a: `No. Hosting is separate from every package, and so is form management. If you want help with either, say so in your message and I'll quote it.`,
+  },
+  {
+    q: "Can I edit the site myself after launch?",
+    a: `With a CMS, yes. ${business.name} lets you change text and photos in your browser. ${brand.name} also lets you rearrange sections and write blog posts. ${starter.name} has no CMS, but you can add one for $${ADDONS.cms[1]}.`,
+  },
+  {
+    q: "What does “days of fixes” cover?",
+    a: `If something I built stops working as agreed after launch, I fix it free. That's ${starter.fixDays} days on ${starter.name}, ${business.fixDays} on ${business.name} and ${brand.fixDays} on ${brand.name}. New features or pages are a new order.`,
+  },
+  {
+    q: "Why order through Fiverr?",
+    a: `Messages, files and payment stay in one place, and Fiverr holds your payment until the order is delivered.`,
+  },
+];
+---
+
+<section class="section" id="faq" aria-labelledby="faq-title">
+  <div class="wrap split">
+    <header class="sec-head">
+      <h2 id="faq-title">Questions</h2>
+    </header>
+
+    <div class="faqs">
+      {
+        faqs.map((f, i) => (
+          <details class="faq" name="faq" open={i === 0}>
+            <summary>
+              <span>{f.q}</span>
+              <Plus aria-hidden="true" />
+            </summary>
+            <p>{f.a}</p>
+          </details>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+
+
+  .faqs {
+    border-top: 1px solid var(--line);
+    min-width: 0;
+  }
+
+  .faq {
+    border-bottom: 1px solid var(--line);
+  }
+
+  summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 22px 0;
+    cursor: pointer;
+    list-style: none;
+    font-size: var(--t-md);
+    font-weight: 600;
+    line-height: 1.35;
+    text-wrap: balance;
+    transition: color 0.2s var(--ease);
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  summary:hover {
+    color: var(--accent);
+  }
+
+  summary :global(svg) {
+    width: 20px;
+    height: 20px;
+    flex: none;
+    color: var(--fg-3);
+    transition:
+      transform 0.3s var(--ease),
+      color 0.3s var(--ease);
+  }
+
+  .faq[open] summary :global(svg) {
+    transform: rotate(45deg);
+    color: var(--accent);
+  }
+
+  .faq p {
+    max-width: 62ch;
+    padding: 0 0 24px 0;
+    color: var(--fg-2);
+  }
+
+  @media (min-width: 640px) {
+    .faq p {
+      padding-right: 40px;
+    }
+  }
+
+</style>

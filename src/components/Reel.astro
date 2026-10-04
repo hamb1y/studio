@@ -1,0 +1,464 @@
+---
+/**
+ * The 20-second reel. It plays muted and looped while it's on screen and pauses
+ * when it leaves. Nothing is downloaded, not even the poster, until it is half a
+ * screen away. With reduced motion or Save-Data it waits on the poster for a
+ * press on Play. Full screen hands over to the browser's own controls. Without
+ * script it is a plain video with the browser's controls.
+ *
+ * Files in public/reel/ come from scripts/encode-reel.sh. Phones, upright or on
+ * their side, get the 720p file and larger screens the 1080p one. The WebM is
+ * only for browsers that can't play H.264.
+ */
+import Maximize from "@lucide/astro/icons/maximize";
+import Pause from "@lucide/astro/icons/pause";
+import Play from "@lucide/astro/icons/play";
+import Volume2 from "@lucide/astro/icons/volume-2";
+import VolumeX from "@lucide/astro/icons/volume-x";
+
+const MP4_720 = 'video/mp4; codecs="avc1.64001F, mp4a.40.2"';
+const MP4_1080 = 'video/mp4; codecs="avc1.64002A, mp4a.40.2"';
+const WEBM = 'video/webm; codecs="vp9, opus"';
+---
+
+<section class="section reel" aria-labelledby="reel-title" data-reel>
+  <div class="wrap">
+    <h2 id="reel-title" class="visually-hidden">Reel</h2>
+
+    <figure class="reel-figure">
+      <div class="reel-frame" data-reel-frame>
+        <video
+          class="reel-video"
+          data-reel-video
+          muted
+          loop
+          playsinline
+          preload="none"
+          controls
+          aria-describedby="reel-caption"
+          data-poster-small="/reel/poster-960.webp"
+          data-poster-large="/reel/poster-1920.webp"
+        >
+          <source src="/reel/reel-720.mp4" type={MP4_720} media="(max-width: 767px), (max-height: 500px)" />
+          <source src="/reel/reel-1080.mp4" type={MP4_1080} />
+          <source src="/reel/reel-720.webm" type={WEBM} data-reel-last />
+        </video>
+        <button type="button" class="reel-start" data-reel-start>
+          <span class="reel-start-label"><Play aria-hidden="true" />Play reel</span>
+        </button>
+      </div>
+
+      <div class="reel-controls">
+        <button type="button" class="reel-btn reel-btn--icon" data-reel-play aria-label="Pause reel">
+          <Pause class="i-pause" aria-hidden="true" />
+          <Play class="i-play" aria-hidden="true" />
+        </button>
+        <button type="button" class="reel-btn" data-reel-sound>
+          <VolumeX class="i-muted" aria-hidden="true" />
+          <Volume2 class="i-sound" aria-hidden="true" />
+          {/* Both labels hold their place, so the button keeps one width. */}
+          <span class="reel-sound-label">
+            <span class="t-on">Turn sound on</span>
+            <span class="t-off">Turn sound off</span>
+          </span>
+        </button>
+        <button type="button" class="reel-btn reel-btn--icon" data-reel-full aria-label="Full screen">
+          <Maximize aria-hidden="true" />
+        </button>
+      </div>
+
+      <figcaption id="reel-caption" class="reel-caption">
+        A 20-second reel. It shows a page on desktop, tablet and phone, two sites I built, and my prices.
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<script>
+  const reel = document.querySelector<HTMLElement>("[data-reel]");
+  if (reel) initReel(reel);
+
+  function initReel(reel: HTMLElement) {
+    const frame = reel.querySelector<HTMLElement>("[data-reel-frame]")!;
+    const video = reel.querySelector<HTMLVideoElement>("[data-reel-video]")!;
+    const lastSource = reel.querySelector<HTMLSourceElement>("[data-reel-last]")!;
+    const playBtn = reel.querySelector<HTMLButtonElement>("[data-reel-play]")!;
+    const soundBtn = reel.querySelector<HTMLButtonElement>("[data-reel-sound]")!;
+    const startBtn = reel.querySelector<HTMLButtonElement>("[data-reel-start]")!;
+    const fullBtn = reel.querySelector<HTMLButtonElement>("[data-reel-full]")!;
+
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
+
+    // What the visitor wants: the reel playing whenever it's on screen.
+    let wanted = !reduceMotion.matches && !connection?.saveData;
+    let onScreen = false;
+    let requested = false;
+    let failed = false;
+    let ownPause = false;
+
+    // Full screen: the standard API where there is one, the video player on iPhone,
+    // which only opens once the video has loaded its metadata.
+    const webkitVideo = video as HTMLVideoElement & { webkitEnterFullscreen?: () => void };
+    const standardFull = document.fullscreenEnabled;
+    const iphoneFull = !standardFull && typeof webkitVideo.webkitEnterFullscreen === "function";
+    if (!standardFull && !iphoneFull) fullBtn.remove();
+
+    // The browser's controls are only for visitors without script.
+    video.controls = false;
+    video.muted = true;
+
+    // The first frame, sized for the screen. Set late so it isn't part of the first page load.
+    function showPoster() {
+      if (video.poster) return;
+      const sharp = frame.clientWidth * window.devicePixelRatio > 960;
+      video.poster = (sharp ? video.dataset.posterLarge : video.dataset.posterSmall)!;
+    }
+
+    function load() {
+      if (requested) return;
+      requested = true;
+      video.preload = "auto";
+      video.load();
+    }
+
+    function render() {
+      reel.classList.toggle("is-paused", !wanted);
+      reel.classList.toggle("is-muted", video.muted);
+      playBtn.setAttribute("aria-label", wanted ? "Pause reel" : "Play reel");
+    }
+
+    function sync() {
+      if (failed) return;
+      if (wanted && onScreen && !document.hidden) {
+        load();
+        video.play().catch((err: DOMException) => {
+          // A pause during start-up interrupts play(); that's expected.
+          if (err.name === "AbortError" || failed) return;
+          if (!video.muted) {
+            // Sound needs a fresh tap in some browsers. Keep playing without it.
+            video.muted = true;
+            sync();
+          } else {
+            // Autoplay is off (iOS Low Power Mode, for one). Wait for a press on Play.
+            wanted = false;
+            render();
+          }
+        });
+      } else if (!video.paused) {
+        ownPause = true;
+        video.pause();
+      }
+      render();
+    }
+
+    function fail() {
+      failed = true;
+      reel.classList.add("is-failed");
+    }
+
+    playBtn.addEventListener("click", () => {
+      wanted = !wanted;
+      if (wanted) onScreen = true; // pressed, so it's in view even if under half shows
+      sync();
+    });
+
+    startBtn.addEventListener("click", () => {
+      wanted = true;
+      onScreen = true;
+      sync();
+      playBtn.focus(); // the start button disappears; keep keyboard focus nearby
+    });
+
+    soundBtn.addEventListener("click", () => {
+      video.muted = !video.muted;
+      render();
+    });
+
+    fullBtn.addEventListener("click", () => {
+      wanted = true;
+      onScreen = true;
+      sync();
+      if (standardFull) {
+        video.requestFullscreen().then(() => {
+          // Phones turn to landscape where the browser allows it.
+          const orientation = screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> };
+          orientation.lock?.("landscape").catch(() => {});
+        }, () => {});
+      } else {
+        webkitVideo.webkitEnterFullscreen?.();
+      }
+    });
+
+    // While the reel fills the screen the browser's own controls run it.
+    document.addEventListener("fullscreenchange", () => {
+      video.controls = document.fullscreenElement === video;
+    });
+
+    // Keep the buttons in step with the browser's controls.
+    video.addEventListener("play", () => {
+      if (!wanted) {
+        wanted = true;
+        render();
+      }
+    });
+    video.addEventListener("pause", () => {
+      if (ownPause) {
+        ownPause = false;
+        return;
+      }
+      // Paused by the visitor, not by scrolling away or switching tabs.
+      if (!failed && onScreen && !document.hidden) {
+        wanted = false;
+        render();
+      }
+    });
+    video.addEventListener("volumechange", render);
+    const fullReady = () => (fullBtn.disabled = iphoneFull && video.readyState < 1);
+    video.addEventListener("loadedmetadata", fullReady);
+    fullReady();
+
+    video.addEventListener("playing", () => reel.classList.add("has-played"));
+    video.addEventListener("error", fail);
+    // Every source the browser could try has failed: keep the poster and hide the controls.
+    lastSource.addEventListener("error", fail);
+
+    // Half a screen before the reel scrolls into view, fetch the poster and, unless
+    // it's waiting for a press on Play, the video.
+    const preloader = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return;
+        showPoster();
+        if (wanted) load();
+        preloader.disconnect();
+      },
+      { rootMargin: "50% 0px" },
+    );
+    preloader.observe(frame);
+
+    // Play once at least half of it shows; pause only after it has fully left.
+    new IntersectionObserver(
+      ([entry]) => {
+        if (entry.intersectionRatio >= 0.5) onScreen = true;
+        else if (!entry.isIntersecting) onScreen = false;
+        else return;
+        sync();
+      },
+      { threshold: [0, 0.5] },
+    ).observe(frame);
+
+    document.addEventListener("visibilitychange", sync);
+
+    reduceMotion.addEventListener("change", () => {
+      if (reduceMotion.matches) {
+        wanted = false;
+        sync();
+      }
+    });
+
+    reel.classList.add("is-enhanced");
+    render();
+  }
+</script>
+
+<style>
+  .reel-figure {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px 20px;
+    /* Never taller than the screen, so the whole frame and its controls fit in view. */
+    width: min(100%, max(480px, (100vh - var(--header-h) - 150px) * 16 / 9));
+    width: min(100%, max(480px, (100svh - var(--header-h) - 150px) * 16 / 9));
+    margin-inline: auto;
+  }
+
+  .reel-frame {
+    position: relative;
+    flex: 1 1 100%;
+    aspect-ratio: 16 / 9;
+    max-width: 100%;
+    border: 1px solid var(--line-2);
+    border-radius: var(--radius);
+    background: var(--bg-1);
+    overflow: hidden;
+  }
+
+  .reel-video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* ---------- Play button over the poster ---------- */
+
+  .reel-start {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: none;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .reel:global(.is-enhanced.is-paused:not(.has-played)) .reel-start {
+    display: block;
+  }
+
+  /* Sits in the empty browser frame on the right of the first shot. */
+  .reel-start-label {
+    position: absolute;
+    top: 50%;
+    left: 68.3%;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 48px;
+    padding: 0 20px 0 16px;
+    transform: translate(-50%, -50%);
+    border: 1px solid var(--line-2);
+    border-radius: var(--radius-sm);
+    background: rgb(10 11 14 / 0.88);
+    color: var(--fg);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    white-space: nowrap;
+    width: max-content;
+    transition: border-color 0.2s var(--ease);
+  }
+
+  .reel-start-label :global(svg) {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    color: var(--accent);
+    fill: currentColor;
+  }
+
+  .reel-start:hover .reel-start-label {
+    border-color: var(--fg-3);
+  }
+
+  .reel-start:focus-visible {
+    outline: none;
+  }
+
+  .reel-start:focus-visible .reel-start-label {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+
+  @media (max-width: 479px) {
+    .reel-start-label {
+      gap: 8px;
+      min-height: 44px;
+      padding: 0 16px 0 12px;
+      font-size: 0.875rem;
+    }
+  }
+
+  /* ---------- Controls ---------- */
+
+  .reel-controls {
+    display: none;
+    flex: none;
+    gap: 8px;
+  }
+
+  .reel:global(.is-enhanced) .reel-controls {
+    display: flex;
+  }
+
+  .reel:global(.is-failed) .reel-controls,
+  .reel:global(.is-failed) .reel-start {
+    display: none;
+  }
+
+  .reel-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 16px 0 14px;
+    border: 1px solid var(--line-2);
+    border-radius: 8px;
+    background: var(--bg-1);
+    color: var(--fg-2);
+    font-size: 0.875rem;
+    font-weight: 600;
+    white-space: nowrap;
+    touch-action: manipulation;
+    transition:
+      color 0.2s var(--ease),
+      border-color 0.2s var(--ease);
+  }
+
+  .reel-btn--icon {
+    width: 44px;
+    padding: 0;
+  }
+
+  .reel-btn:hover {
+    color: var(--fg);
+    border-color: var(--fg-3);
+  }
+
+  .reel-btn:disabled {
+    color: var(--fg-3);
+    border-color: var(--line);
+    cursor: default;
+  }
+
+  .reel-btn :global(svg) {
+    width: 18px;
+    height: 18px;
+    flex: none;
+  }
+
+  .reel-btn .i-play,
+  .reel-btn .i-sound,
+  .reel:global(.is-paused) .reel-btn .i-pause,
+  .reel:global(:not(.is-muted)) .reel-btn .i-muted {
+    display: none;
+  }
+
+  .reel:global(.is-paused) .reel-btn .i-play,
+  .reel:global(:not(.is-muted)) .reel-btn .i-sound {
+    display: block;
+  }
+
+  .reel-sound-label {
+    display: grid;
+  }
+
+  .reel-sound-label > span {
+    grid-area: 1 / 1;
+  }
+
+  .reel:global(.is-muted) .t-off,
+  .reel:global(:not(.is-muted)) .t-on {
+    visibility: hidden;
+  }
+
+  /* Sound on: the one control that changes what the visitor hears gets the accent. */
+  .reel:global(:not(.is-muted)) [data-reel-sound] {
+    color: var(--fg);
+    border-color: var(--accent-line);
+  }
+
+  .reel:global(:not(.is-muted)) [data-reel-sound] :global(svg) {
+    color: var(--accent);
+  }
+
+  .reel-caption {
+    flex: 1 1 280px;
+    min-width: 0;
+    color: var(--fg-3);
+    font-size: 0.8125rem;
+    line-height: 1.5;
+  }
+</style>

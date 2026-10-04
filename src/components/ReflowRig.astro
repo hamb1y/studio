@@ -1,0 +1,1350 @@
+---
+/**
+ * The hero motion graphic: a small website that assembles itself from
+ * wireframe boxes, then reflows between desktop, tablet and phone widths.
+ * The layout inside the frame is real CSS (container queries); the script only
+ * changes the frame width, swaps brand themes and smooths breakpoint jumps.
+ */
+import Monitor from "@lucide/astro/icons/monitor";
+import Tablet from "@lucide/astro/icons/tablet";
+import Smartphone from "@lucide/astro/icons/smartphone";
+import Pause from "@lucide/astro/icons/pause";
+import Play from "@lucide/astro/icons/play";
+import GripVertical from "@lucide/astro/icons/grip-vertical";
+---
+
+<figure class="rig" data-rig aria-labelledby="rig-caption">
+  <div class="rig-toolbar">
+    <div class="rig-devices" role="group" aria-label="Preview width">
+      <button type="button" class="rig-dev" data-device="desktop" aria-pressed="true">
+        <Monitor aria-hidden="true" /><span>Desktop</span>
+      </button>
+      <button type="button" class="rig-dev" data-device="tablet" aria-pressed="false">
+        <Tablet aria-hidden="true" /><span>Tablet</span>
+      </button>
+      <button type="button" class="rig-dev" data-device="phone" aria-pressed="false">
+        <Smartphone aria-hidden="true" /><span>Phone</span>
+      </button>
+    </div>
+    <button type="button" class="rig-play" data-play aria-label="Pause animation">
+      <Pause class="i-pause" aria-hidden="true" />
+      <Play class="i-play" aria-hidden="true" />
+    </button>
+  </div>
+
+  <div class="rig-stage" data-stage>
+    <div class="rig-ruler" aria-hidden="true">
+      <span class="rig-bp" data-bp="600" style="--bp: 600"><b>600</b></span>
+      <span class="rig-bp" data-bp="900" style="--bp: 900"><b>900</b></span>
+      <span class="rig-dim" data-dim><span class="rig-dim-label mono"><span data-readout>1280</span>px</span></span>
+    </div>
+
+    <div class="rig-frame" data-frame>
+      <div class="rig-chrome" aria-hidden="true">
+        <span class="rig-url mono">yourbusiness.com</span>
+      </div>
+      <div class="rig-screen" data-screen>
+        <div class="mock" data-mock data-state="built" data-theme="0" aria-hidden="true">
+          <div class="m-page" data-page>
+            <div class="m-nav" data-part data-tag="<nav>" style="--i: 0">
+              <div class="m-logo"><i></i><b>Your brand</b></div>
+              <div class="m-links"><i></i><i></i><i></i><i></i></div>
+              <span class="m-btn m-btn--solid m-navcta" data-slot="nav">Call us</span>
+              <span class="m-burger"><i></i><i></i><i></i></span>
+            </div>
+
+            <div class="m-hero">
+              <div class="m-copy" data-part data-tag="<h1> <p>" style="--i: 1">
+                <span class="m-kicker"></span>
+                <div class="m-h" data-slot="h">Plumbing repairs, same day.</div>
+                <div class="m-p"><i></i><i></i><i></i></div>
+                <div class="m-ctas">
+                  <span class="m-btn m-btn--solid" data-slot="cta1">Get a quote</span>
+                  <span class="m-btn m-btn--ghost" data-slot="cta2">Our services</span>
+                </div>
+              </div>
+              <div class="m-art" data-part data-tag="<img>" style="--i: 2">
+                <span class="m-sun"></span>
+                <span class="m-hill m-hill--back"></span>
+                <span class="m-hill m-hill--front"></span>
+              </div>
+            </div>
+
+            <div class="m-cards">
+              <div class="m-card" data-part data-tag=".card" style="--i: 3">
+                <span class="m-ico"></span><b></b><p><i></i><i></i></p>
+              </div>
+              <div class="m-card" data-part data-tag=".card" style="--i: 4">
+                <span class="m-ico"></span><b></b><p><i></i><i></i></p>
+              </div>
+              <div class="m-card" data-part data-tag=".card" style="--i: 5">
+                <span class="m-ico"></span><b></b><p><i></i><i></i></p>
+              </div>
+            </div>
+
+            <div class="m-band" data-part data-tag="<section>" style="--i: 6">
+              <div class="m-band-text"><i></i><i></i></div>
+              <span class="m-btn m-btn--invert" data-slot="band">Get a quote</span>
+            </div>
+
+            <div class="m-foot" data-part data-tag="<footer>" style="--i: 7">
+              <i></i><i></i><i></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="rig-handle"
+        data-handle
+        role="slider"
+        tabindex="0"
+        aria-label="Preview width in pixels"
+        aria-valuemin="320"
+        aria-valuemax="1280"
+        aria-valuenow="1280"
+        aria-valuetext="1280 pixels"
+      >
+        <GripVertical aria-hidden="true" />
+      </div>
+    </div>
+  </div>
+
+  <figcaption id="rig-caption" class="rig-caption">
+    The page in the frame is real HTML and CSS. Drag the handle to resize it, or pick a device.
+  </figcaption>
+</figure>
+
+<script>
+  type Bucket = "lg" | "md" | "sm";
+  interface Step {
+    update(dt: number): boolean;
+  }
+
+  const rig = document.querySelector<HTMLElement>("[data-rig]");
+  if (rig) initRig(rig);
+
+  function initRig(rig: HTMLElement) {
+    const stage = rig.querySelector<HTMLElement>("[data-stage]")!;
+    const frame = rig.querySelector<HTMLElement>("[data-frame]")!;
+    const screen = rig.querySelector<HTMLElement>("[data-screen]")!;
+    const mock = rig.querySelector<HTMLElement>("[data-mock]")!;
+    const page = rig.querySelector<HTMLElement>("[data-page]")!;
+    const handle = rig.querySelector<HTMLElement>("[data-handle]")!;
+    const readout = rig.querySelector<HTMLElement>("[data-readout]")!;
+    const dim = rig.querySelector<HTMLElement>("[data-dim]")!;
+    const playBtn = rig.querySelector<HTMLButtonElement>("[data-play]")!;
+    const slots = Object.fromEntries(
+      [...rig.querySelectorAll<HTMLElement>("[data-slot]")].map((el) => [el.dataset.slot!, el]),
+    );
+    const devButtons = [...rig.querySelectorAll<HTMLButtonElement>("[data-device]")];
+    const parts = [...mock.querySelectorAll<HTMLElement>("[data-part]")];
+    const burger = mock.querySelector<HTMLElement>(".m-burger")!;
+
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    // Three sample businesses, one per brand theme in the CSS.
+    const THEMES: Record<string, string>[] = [
+      { h: "Plumbing repairs, same day.", cta1: "Get a quote", cta2: "Our services", nav: "Call us", band: "Get a quote" },
+      { h: "Fresh bread, baked every morning.", cta1: "Order ahead", cta2: "Today's bakes", nav: "Order", band: "Visit us" },
+      { h: "Book a table for tonight.", cta1: "Book a table", cta2: "See the menu", nav: "Book", band: "Book now" },
+    ];
+    const MIN_W = 320;
+
+    let vmax = 1280; // virtual desktop width
+    let scale = 0.5;
+    let w = 1280; // current virtual width
+    let scroll = 0; // virtual scroll offset inside the mock
+    let bucket: Bucket = "lg";
+    let theme = 0;
+    let playing = !reduceMotion.matches;
+    let visible = true;
+    let manual: Step | null = null;
+    let rafId = 0;
+    let last = 0;
+
+    const widthFor = (device: string) => (device === "phone" ? 375 : device === "tablet" ? 820 : vmax);
+    const bucketOf = (width: number): Bucket => (width >= 900 ? "lg" : width >= 600 ? "md" : "sm");
+    const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+
+    /* ---------- Geometry ---------- */
+
+    function measure() {
+      const stageW = stage.clientWidth;
+      vmax = stageW >= 520 ? 1280 : 1024;
+      // Leave room for the drag handle on both sides of the centred frame.
+      scale = (stageW - 40) / vmax;
+      const screenH = Math.round(Math.min(Math.max(stageW * 0.6, 236), 430));
+      rig.style.setProperty("--s", String(scale));
+      rig.style.setProperty("--screen-h", `${screenH}px`);
+      rig.style.setProperty("--vh", String(screenH / scale));
+      handle.setAttribute("aria-valuemax", String(vmax));
+      if (w > vmax || devButtons[0].getAttribute("aria-pressed") === "true") w = vmax;
+      applyWidth(w, false);
+      applyScroll(scroll);
+    }
+
+    function applyWidth(next: number, animate = true) {
+      next = Math.round(Math.min(vmax, Math.max(MIN_W, next)));
+      const nextBucket = bucketOf(next);
+      const flip = animate && nextBucket !== bucket && !reduceMotion.matches;
+      const first = flip ? snapshot() : null;
+
+      w = next;
+      rig.style.setProperty("--w", String(w));
+      readout.textContent = String(w);
+      handle.setAttribute("aria-valuenow", String(w));
+      handle.setAttribute("aria-valuetext", `${w} pixels`);
+
+      if (nextBucket !== bucket) {
+        bucket = nextBucket;
+        mock.dataset.bucket = bucket;
+        if (first) playFlip(first);
+      }
+      dim.classList.toggle("is-narrow", w * scale < 120);
+    }
+
+    function applyScroll(y: number) {
+      const max = Math.max(0, page.scrollHeight - screen.clientHeight / scale);
+      scroll = Math.min(Math.max(0, y), max);
+      page.style.transform = `translateY(${-scroll}px)`;
+    }
+
+    function maxScroll() {
+      return Math.max(0, page.scrollHeight - screen.clientHeight / scale);
+    }
+
+    /* ---------- FLIP: smooth the jump when a breakpoint is crossed ---------- */
+
+    function snapshot() {
+      return parts.map((el) => el.getBoundingClientRect());
+    }
+
+    function playFlip(first: DOMRect[]) {
+      parts.forEach((el, i) => {
+        const a = first[i];
+        const b = el.getBoundingClientRect();
+        if (!a.width || !b.width) return;
+        const dx = (a.left - b.left) / scale;
+        const dy = (a.top - b.top) / scale;
+        // Boxes with text only move; plain boxes may also stretch.
+        const stretch = el.classList.contains("m-art") || el.classList.contains("m-card");
+        const sx = stretch ? a.width / b.width : 1;
+        const sy = stretch ? a.height / b.height : 1;
+        el.animate(
+          [
+            { transformOrigin: "0 0", transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})` },
+            { transformOrigin: "0 0", transform: "none" },
+          ],
+          { duration: 620, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" },
+        );
+      });
+      burger.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 400, easing: "ease-out" });
+    }
+
+    /* ---------- Timeline steps ---------- */
+
+    const wait = (ms: number): Step => {
+      let t = 0;
+      return { update: (dt) => (t += dt) >= ms };
+    };
+
+    const tweenWidth = (to: number | (() => number), ms: number): Step => {
+      let t = 0;
+      let from = -1;
+      let target = 0;
+      return {
+        update(dt) {
+          if (from < 0) {
+            from = w;
+            target = typeof to === "function" ? to() : to;
+          }
+          t += dt;
+          const p = ms <= 0 ? 1 : Math.min(1, t / ms);
+          applyWidth(from + (target - from) * ease(p));
+          return p >= 1;
+        },
+      };
+    };
+
+    const tweenScroll = (to: "top" | "bottom", ms: number): Step => {
+      let t = 0;
+      let from = -1;
+      let target = 0;
+      return {
+        update(dt) {
+          if (from < 0) {
+            from = scroll;
+            target = to === "top" ? 0 : maxScroll();
+          }
+          t += dt;
+          const p = ms <= 0 ? 1 : Math.min(1, t / ms);
+          applyScroll(from + (target - from) * ease(p));
+          return p >= 1;
+        },
+      };
+    };
+
+    const act = (fn: () => void): Step => ({
+      update() {
+        fn();
+        return true;
+      },
+    });
+
+    const setState = (s: "empty" | "wire" | "built") => act(() => (mock.dataset.state = s));
+    const pressDevice = (device: string | null) =>
+      act(() => devButtons.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.device === device))));
+
+    function* timeline(): Generator<Step> {
+      while (true) {
+        yield wait(1600);
+        yield pressDevice("tablet");
+        yield tweenWidth(820, 1250);
+        yield wait(1500);
+        yield pressDevice("phone");
+        yield tweenWidth(375, 1250);
+        yield wait(700);
+        yield tweenScroll("bottom", 2200);
+        yield wait(700);
+        yield tweenScroll("top", 900);
+        yield wait(300);
+        yield pressDevice("desktop");
+        yield tweenWidth(() => vmax, 1300);
+        yield wait(1300);
+        // Take the page apart and rebuild it in the next brand theme.
+        yield setState("empty");
+        yield wait(520);
+        yield act(() => {
+          theme = (theme + 1) % THEMES.length;
+          mock.dataset.theme = String(theme);
+          Object.entries(THEMES[theme]).forEach(([slot, text]) => {
+            if (slots[slot]) slots[slot].textContent = text;
+          });
+        });
+        yield setState("wire");
+        yield wait(1500);
+        yield setState("built");
+        yield wait(900);
+      }
+    }
+
+    let tl = timeline();
+    let current: Step = tl.next().value as Step;
+
+    /* ---------- Frame loop: only runs while something is animating ---------- */
+
+    function frameLoop(now: number) {
+      const dt = Math.min(64, now - (last || now));
+      last = now;
+
+      if (manual) {
+        if (manual.update(dt)) manual = null;
+      } else if (playing) {
+        if (current.update(dt)) current = tl.next().value as Step;
+      }
+
+      if (visible && (playing || manual)) {
+        rafId = requestAnimationFrame(frameLoop);
+      } else {
+        rafId = 0;
+      }
+    }
+
+    function kick() {
+      if (!rafId && visible && (playing || manual)) {
+        last = 0;
+        rafId = requestAnimationFrame(frameLoop);
+      }
+    }
+
+    /* ---------- Controls ---------- */
+
+    function setPlaying(next: boolean) {
+      playing = next;
+      playBtn.setAttribute("aria-label", next ? "Pause animation" : "Play animation");
+      rig.classList.toggle("is-paused", !next);
+      if (next) {
+        // Resume from a clean, fully built desktop view.
+        mock.dataset.state = "built";
+        tl = timeline();
+        current = tl.next().value as Step;
+        manual = tweenWidth(() => vmax, reduceMotion.matches ? 0 : 700);
+        applyScroll(0);
+        devButtons.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.device === "desktop")));
+      }
+      kick();
+    }
+
+    function takeControl() {
+      if (playing) setPlaying(false);
+      mock.dataset.state = "built";
+    }
+
+    devButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        takeControl();
+        const device = btn.dataset.device!;
+        devButtons.forEach((b) => b.setAttribute("aria-pressed", String(b === btn)));
+        applyScroll(0);
+        manual = tweenWidth(widthFor(device), reduceMotion.matches ? 0 : 750);
+        kick();
+      });
+    });
+
+    playBtn.addEventListener("click", () => setPlaying(!playing));
+
+    // Drag the handle: the frame is centred, so each side moves by the drag distance.
+    let dragStartX = 0;
+    let dragStartW = 0;
+    handle.addEventListener("pointerdown", (e) => {
+      takeControl();
+      manual = null;
+      dragStartX = e.clientX;
+      dragStartW = w;
+      handle.setPointerCapture(e.pointerId);
+      rig.classList.add("is-dragging");
+      devButtons.forEach((b) => b.setAttribute("aria-pressed", "false"));
+      applyScroll(0);
+    });
+    handle.addEventListener("pointermove", (e) => {
+      if (!handle.hasPointerCapture(e.pointerId)) return;
+      applyWidth(dragStartW + ((e.clientX - dragStartX) * 2) / scale);
+    });
+    const endDrag = (e: PointerEvent) => {
+      if (handle.hasPointerCapture(e.pointerId)) handle.releasePointerCapture(e.pointerId);
+      rig.classList.remove("is-dragging");
+    };
+    handle.addEventListener("pointerup", endDrag);
+    handle.addEventListener("pointercancel", endDrag);
+
+    handle.addEventListener("keydown", (e) => {
+      const step = e.shiftKey ? 100 : 20;
+      let next: number | null = null;
+      if (e.key === "ArrowRight" || e.key === "ArrowUp") next = w + step;
+      else if (e.key === "ArrowLeft" || e.key === "ArrowDown") next = w - step;
+      else if (e.key === "Home") next = MIN_W;
+      else if (e.key === "End") next = vmax;
+      if (next === null) return;
+      e.preventDefault();
+      takeControl();
+      devButtons.forEach((b) => b.setAttribute("aria-pressed", "false"));
+      applyScroll(0);
+      applyWidth(next);
+    });
+
+    /* ---------- Lifecycle ---------- */
+
+    new ResizeObserver(() => measure()).observe(stage);
+
+    new IntersectionObserver(
+      ([entry]) => {
+        visible = entry.isIntersecting && !document.hidden;
+        kick();
+      },
+      { threshold: 0.05 },
+    ).observe(rig);
+
+    document.addEventListener("visibilitychange", () => {
+      visible = !document.hidden;
+      kick();
+    });
+
+    reduceMotion.addEventListener("change", () => {
+      if (reduceMotion.matches) setPlaying(false);
+    });
+
+    measure();
+    mock.dataset.bucket = bucket;
+    setPlaying(playing);
+    rig.classList.add("is-ready");
+  }
+</script>
+
+<style>
+  .rig {
+    --w: 1280;
+    --s: 0.45;
+    --screen-h: 380px;
+    --wire: var(--accent);
+    position: relative;
+    display: grid;
+    gap: 14px;
+    min-width: 0;
+  }
+
+  /* ---------- Toolbar ---------- */
+
+  .rig-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .rig-devices {
+    display: inline-flex;
+    padding: 3px;
+    gap: 2px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--bg-1);
+  }
+
+  .rig-dev {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 34px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 5px;
+    touch-action: manipulation;
+    background: transparent;
+    color: var(--fg-2);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    transition:
+      background-color 0.2s var(--ease),
+      color 0.2s var(--ease);
+  }
+
+  .rig-dev svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .rig-dev:hover {
+    color: var(--fg);
+  }
+
+  .rig-dev[aria-pressed="true"] {
+    background: var(--bg-3);
+    color: var(--fg);
+    box-shadow: inset 0 0 0 1px var(--line-2);
+  }
+
+  .rig-dev[aria-pressed="true"] svg {
+    color: var(--accent);
+  }
+
+
+
+  .rig-play {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    flex: none;
+    margin-left: auto;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--bg-1);
+    color: var(--fg-2);
+  }
+
+  .rig-play:hover {
+    color: var(--fg);
+    border-color: var(--line-2);
+  }
+
+  .rig-play svg {
+    width: 15px;
+    height: 15px;
+    grid-area: 1 / 1;
+  }
+
+  .rig-play .i-play,
+  .rig:global(.is-paused) .rig-play .i-pause {
+    display: none;
+  }
+
+  .rig:global(.is-paused) .rig-play .i-play {
+    display: block;
+  }
+
+  /* ---------- Stage ---------- */
+
+  .rig-stage {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: 10px;
+    padding: 18px 0 22px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background:
+      radial-gradient(circle at 1px 1px, rgb(255 255 255 / 0.07) 1px, transparent 0) 0 0 / 16px 16px,
+      linear-gradient(180deg, var(--bg-1), var(--bg));
+    overflow: hidden;
+    min-width: 0;
+  }
+
+  /* Ruler with breakpoint ticks and a live dimension line. */
+  .rig-ruler {
+    position: relative;
+    width: 100%;
+    height: 22px;
+  }
+
+  .rig-ruler::before {
+    content: "";
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    top: 50%;
+    height: 1px;
+    background: var(--line);
+  }
+
+  .rig-bp {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc(50% - var(--bp) * var(--s) * 0.5px);
+    width: calc(var(--bp) * var(--s) * 1px);
+    border-inline: 1px dashed var(--line-2);
+  }
+
+  .rig-bp b {
+    position: absolute;
+    top: -3px;
+    right: -1px;
+    transform: translateX(50%);
+    padding: 0 3px;
+    background: var(--bg-1);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 400;
+    font-stretch: 87.5%;
+    color: var(--fg-3);
+    line-height: 1;
+  }
+
+  .rig-dim {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: calc(var(--w) * var(--s) * 1px);
+    height: 11px;
+    transform: translate(-50%, -50%);
+    border-inline: 1px solid var(--accent);
+    display: grid;
+    place-items: center;
+  }
+
+  .rig-dim::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  .rig-dim-label {
+    position: relative;
+    padding: 3px 7px;
+    border-radius: 3px;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 600;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  /* ---------- Browser frame ---------- */
+
+  .rig-frame {
+    position: relative;
+    width: calc(var(--w) * var(--s) * 1px + 2px);
+    max-width: calc(100% - 36px);
+    border: 1px solid var(--line-2);
+    border-radius: 9px;
+    background: var(--bg-2);
+    box-shadow:
+      0 30px 60px -30px rgb(0 0 0 / 0.8),
+      0 0 0 6px rgb(255 255 255 / 0.015);
+  }
+
+  .rig-chrome {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    height: 26px;
+    padding: 0 9px;
+    border-bottom: 1px solid var(--line);
+    overflow: hidden;
+  }
+
+
+
+  .rig-url {
+    flex: 1;
+    min-width: 0;
+    padding: 3px 4px;
+    border-radius: 4px;
+    background: var(--bg);
+    color: var(--fg-3);
+    font-size: 9px;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+  }
+
+  .rig-screen {
+    position: relative;
+    height: var(--screen-h);
+    overflow: hidden;
+    border-radius: 0 0 8px 8px;
+  }
+
+  .rig-handle {
+    position: absolute;
+    top: 50%;
+    right: -15px;
+    display: grid;
+    place-items: center;
+    width: 14px;
+    height: 56px;
+    transform: translateY(-50%);
+    border: 1px solid var(--line-2);
+    border-radius: 5px;
+    background: var(--bg-3);
+    color: var(--fg-2);
+    cursor: ew-resize;
+    touch-action: none;
+    transition:
+      background-color 0.2s var(--ease),
+      color 0.2s var(--ease);
+  }
+
+  .rig-handle svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  /* A larger invisible hit area around the handle for fingers. */
+  .rig-handle::before {
+    content: "";
+    position: absolute;
+    inset: -14px -16px;
+  }
+
+  @media (pointer: coarse) {
+    .rig-dev {
+      min-height: 44px;
+      min-width: 44px;
+      justify-content: center;
+    }
+
+    .rig-play {
+      width: 44px;
+      height: 44px;
+    }
+
+    .rig-handle {
+      width: 18px;
+      height: 64px;
+      right: -19px;
+    }
+  }
+
+  .rig-handle:hover,
+  .rig:global(.is-dragging) .rig-handle {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+  }
+
+  .rig-caption {
+    color: var(--fg-3);
+    font-size: 0.8125rem;
+    line-height: 1.5;
+  }
+
+
+
+
+
+
+
+  @media (max-width: 479px) {
+    .rig-dev {
+      padding: 0 11px;
+    }
+
+    .rig-dev span {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+  }
+
+  /* =====================================================================
+     The mock website. Sizes are in virtual pixels: the page is laid out at
+     its real width (--w) and scaled down to fit the frame.
+     ===================================================================== */
+
+  .mock {
+    /* Brand theme 0: paper and cobalt */
+    --m-bg: #f4f3ee;
+    --m-fg: #14151a;
+    --m-bar: #d6d4cb;
+    --m-card: #ffffff;
+    --m-line: #e3e1d8;
+    --m-accent: #2c55f0;
+    --m-accent-ink: #ffffff;
+    --m-sky-1: #dfe5ff;
+    --m-sky-2: #aebdff;
+    --m-hill-1: #2c55f0;
+    --m-hill-2: #14151a;
+    --m-sun: #ffb21e;
+    --m-head: var(--font-sans);
+    --m-head-weight: 800;
+    --m-head-stretch: 78%;
+    --m-head-track: -0.035em;
+    --m-head-size: 70px;
+    --m-radius: 14px;
+
+    container-type: inline-size;
+    width: calc(var(--w) * 1px);
+    height: calc(var(--vh, 820) * 1px);
+    transform: scale(var(--s));
+    transform-origin: 0 0;
+    background: var(--m-bg);
+    color: var(--m-fg);
+    font-family: var(--font-sans);
+    overflow: hidden;
+    transition: background-color 0.5s var(--ease);
+  }
+
+  .mock[data-theme="1"] {
+    /* Brand theme 1: forest and saffron, serif headline */
+    --m-bg: #0f2a22;
+    --m-fg: #eef3ee;
+    --m-bar: #2d5446;
+    --m-card: #143529;
+    --m-line: #214336;
+    --m-accent: #f2c14e;
+    --m-accent-ink: #10251d;
+    --m-sky-1: #1d4a3b;
+    --m-sky-2: #2f6a54;
+    --m-hill-1: #f2c14e;
+    --m-hill-2: #0a1d17;
+    --m-sun: #f7e3a8;
+    --m-head: Georgia, "Times New Roman", serif;
+    --m-head-weight: 600;
+    --m-head-stretch: 100%;
+    --m-head-track: -0.02em;
+    --m-head-size: 68px;
+    --m-radius: 4px;
+  }
+
+  .mock[data-theme="2"] {
+    /* Brand theme 2: blush and berry, mono headline */
+    --m-bg: #ffe9e2;
+    --m-fg: #2a0f1f;
+    --m-bar: #f4c5b9;
+    --m-card: #fff7f3;
+    --m-line: #f6d3c9;
+    --m-accent: #d6336c;
+    --m-accent-ink: #ffffff;
+    --m-sky-1: #ffd3c6;
+    --m-sky-2: #ff9fb3;
+    --m-hill-1: #d6336c;
+    --m-hill-2: #2a0f1f;
+    --m-sun: #ffffff;
+    --m-head: var(--font-mono);
+    --m-head-weight: 600;
+    --m-head-stretch: 80%;
+    --m-head-track: -0.04em;
+    --m-head-size: 56px;
+    --m-radius: 26px;
+  }
+
+  .m-page {
+    will-change: transform;
+  }
+
+  /* Nav */
+  .m-nav {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    height: 84px;
+    padding: 0 56px;
+    border-bottom: 2px solid var(--m-line);
+  }
+
+  .m-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-right: auto;
+    font-size: 24px;
+    font-weight: 800;
+    font-stretch: 85%;
+    letter-spacing: -0.03em;
+    white-space: nowrap;
+  }
+
+  .m-logo i {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--m-accent);
+  }
+
+  .m-links {
+    display: flex;
+    gap: 34px;
+  }
+
+  .m-links i {
+    width: 74px;
+    height: 12px;
+    border-radius: 6px;
+    background: var(--m-bar);
+  }
+
+  .m-links i:nth-child(2) {
+    width: 58px;
+  }
+
+  .m-links i:nth-child(4) {
+    width: 64px;
+  }
+
+  .m-burger {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 7px;
+    width: 48px;
+    height: 48px;
+    padding: 0 10px;
+    border-radius: 10px;
+    background: var(--m-card);
+  }
+
+  .m-burger i {
+    height: 3px;
+    border-radius: 2px;
+    background: var(--m-fg);
+  }
+
+  .m-btn {
+    display: inline-flex;
+    align-items: center;
+    height: 50px;
+    padding: 0 26px;
+    border-radius: var(--m-radius);
+    font-size: 18px;
+    font-weight: 650;
+    white-space: nowrap;
+  }
+
+  .m-btn--solid {
+    background: var(--m-accent);
+    color: var(--m-accent-ink);
+  }
+
+  .m-btn--ghost {
+    box-shadow: inset 0 0 0 2px var(--m-line);
+  }
+
+  .m-btn--invert {
+    background: var(--m-bg);
+    color: var(--m-fg);
+  }
+
+  /* Hero */
+  .m-hero {
+    display: grid;
+    grid-template-columns: 1.08fr 1fr;
+    align-items: center;
+    gap: 56px;
+    padding: 72px 56px 64px;
+  }
+
+  .m-kicker {
+    display: block;
+    width: 150px;
+    height: 14px;
+    border-radius: 7px;
+    background: var(--m-accent);
+    opacity: 0.85;
+  }
+
+  .m-h {
+    margin-top: 26px;
+    font-family: var(--m-head);
+    font-size: var(--m-head-size);
+    font-weight: var(--m-head-weight);
+    font-stretch: var(--m-head-stretch);
+    letter-spacing: var(--m-head-track);
+    line-height: 1.02;
+    max-width: 11ch;
+  }
+
+  .m-p {
+    display: grid;
+    gap: 13px;
+    margin-top: 30px;
+  }
+
+  .m-p i {
+    height: 14px;
+    border-radius: 7px;
+    background: var(--m-bar);
+  }
+
+  .m-p i:nth-child(2) {
+    width: 90%;
+  }
+
+  .m-p i:nth-child(3) {
+    width: 58%;
+  }
+
+  .m-ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 38px;
+  }
+
+  .m-art {
+    position: relative;
+    aspect-ratio: 5 / 4.4;
+    border-radius: calc(var(--m-radius) + 6px);
+    background: linear-gradient(180deg, var(--m-sky-1), var(--m-sky-2));
+    overflow: hidden;
+  }
+
+  .m-sun {
+    position: absolute;
+    top: 18%;
+    right: 20%;
+    width: 22%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--m-sun);
+  }
+
+  .m-hill {
+    position: absolute;
+    border-radius: 50% 50% 0 0;
+  }
+
+  .m-hill--back {
+    left: -10%;
+    right: 25%;
+    bottom: -30%;
+    height: 78%;
+    background: var(--m-hill-1);
+  }
+
+  .m-hill--front {
+    left: 35%;
+    right: -20%;
+    bottom: -40%;
+    height: 72%;
+    background: var(--m-hill-2);
+  }
+
+  /* Cards */
+  .m-cards {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+    padding: 0 56px 56px;
+  }
+
+  .m-card {
+    display: grid;
+    gap: 16px;
+    align-content: start;
+    padding: 30px;
+    border-radius: calc(var(--m-radius) + 2px);
+    background: var(--m-card);
+    box-shadow: inset 0 0 0 2px var(--m-line);
+  }
+
+  .m-ico {
+    width: 48px;
+    height: 48px;
+    border-radius: calc(var(--m-radius) - 2px);
+    background: var(--m-accent);
+    opacity: 0.9;
+  }
+
+  .m-card b {
+    display: block;
+    width: 62%;
+    height: 18px;
+    border-radius: 9px;
+    background: var(--m-fg);
+    opacity: 0.85;
+  }
+
+  .m-card p {
+    display: grid;
+    gap: 11px;
+  }
+
+  .m-card p i {
+    height: 12px;
+    border-radius: 6px;
+    background: var(--m-bar);
+  }
+
+  .m-card p i:last-child {
+    width: 70%;
+  }
+
+  /* Band + footer */
+  .m-band {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 32px;
+    margin: 0 56px 56px;
+    padding: 44px 48px;
+    border-radius: calc(var(--m-radius) + 6px);
+    background: var(--m-accent);
+  }
+
+  .m-band-text {
+    display: grid;
+    gap: 14px;
+    flex: 1;
+    max-width: 520px;
+  }
+
+  .m-band-text i {
+    height: 22px;
+    border-radius: 11px;
+    background: var(--m-accent-ink);
+    opacity: 0.9;
+  }
+
+  .m-band-text i:last-child {
+    width: 60%;
+    height: 14px;
+    opacity: 0.5;
+  }
+
+  .m-foot {
+    display: flex;
+    gap: 28px;
+    padding: 34px 56px 48px;
+    border-top: 2px solid var(--m-line);
+  }
+
+  .m-foot i {
+    width: 110px;
+    height: 12px;
+    border-radius: 6px;
+    background: var(--m-bar);
+  }
+
+  .m-foot i:first-child {
+    margin-right: auto;
+    width: 160px;
+  }
+
+  /* Tablet layout */
+  @container (max-width: 899px) {
+    .m-hero {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 44px;
+      padding: 60px 44px 52px;
+    }
+
+    .m-art {
+      aspect-ratio: 16 / 8;
+    }
+
+    .m-h {
+      max-width: 13ch;
+    }
+
+    .m-cards {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      padding: 0 44px 48px;
+    }
+
+    .m-card:last-child {
+      grid-column: 1 / -1;
+    }
+
+    .m-nav {
+      padding: 0 44px;
+      gap: 28px;
+    }
+
+    .m-links {
+      gap: 24px;
+    }
+
+    .m-links i {
+      width: 56px;
+    }
+
+    .m-band {
+      margin: 0 44px 48px;
+    }
+
+    .m-foot {
+      padding-inline: 44px;
+    }
+  }
+
+  /* Phone layout */
+  @container (max-width: 599px) {
+    .m-nav {
+      height: 72px;
+      padding: 0 24px;
+    }
+
+    .m-links,
+    .m-navcta {
+      display: none;
+    }
+
+    .m-burger {
+      display: flex;
+    }
+
+    .m-hero {
+      gap: 32px;
+      padding: 40px 24px 36px;
+    }
+
+    .m-h {
+      font-size: calc(var(--m-head-size) * 0.66);
+      margin-top: 20px;
+    }
+
+    .m-art {
+      aspect-ratio: 16 / 11;
+    }
+
+    .m-cards {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 16px;
+      padding: 0 24px 36px;
+    }
+
+    .m-card:last-child {
+      grid-column: auto;
+    }
+
+    .m-band {
+      flex-direction: column;
+      align-items: flex-start;
+      margin: 0 24px 36px;
+      padding: 32px 28px;
+    }
+
+    .m-band-text {
+      width: 100%;
+    }
+
+    .m-foot {
+      flex-direction: column;
+      gap: 16px;
+      padding: 28px 24px 40px;
+    }
+  }
+
+  /* ---------- Assembly states ---------- */
+
+  .mock [data-part] {
+    position: relative;
+    transition:
+      opacity 0.45s var(--ease),
+      transform 0.6s var(--ease),
+      background-color 0.45s var(--ease),
+      box-shadow 0.45s var(--ease),
+      outline-color 0.3s var(--ease);
+    transition-delay: calc(var(--i, 0) * 70ms);
+    outline: 2px dashed transparent;
+    outline-offset: -2px;
+  }
+
+  .mock [data-part] > * {
+    transition: opacity 0.45s var(--ease);
+    transition-delay: calc(var(--i, 0) * 70ms + 120ms);
+  }
+
+  .mock [data-part]::after {
+    content: attr(data-tag);
+    position: absolute;
+    top: 0;
+    left: 0;
+    padding: 5px 10px;
+    background: var(--wire);
+    color: #0a0b0e;
+    font-family: var(--font-mono);
+    font-size: 22px;
+    font-weight: 600;
+    font-stretch: 87.5%;
+    line-height: 1.1;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.3s var(--ease);
+    transition-delay: calc(var(--i, 0) * 70ms);
+    pointer-events: none;
+  }
+
+  .mock[data-state="empty"],
+  .mock[data-state="wire"] {
+    background-color: #0d0f13;
+    background-image:
+      linear-gradient(rgb(255 255 255 / 0.05) 2px, transparent 2px),
+      linear-gradient(90deg, rgb(255 255 255 / 0.05) 2px, transparent 2px);
+    background-size: 48px 48px;
+  }
+
+  .mock[data-state="empty"] [data-part] {
+    opacity: 0;
+    transform: translateY(24px);
+    transition-duration: 0.25s;
+    transition-delay: 0ms;
+  }
+
+  .mock[data-state="empty"] [data-part]::after {
+    transition-delay: 0ms;
+  }
+
+  .mock[data-state="wire"] [data-part] {
+    outline-color: var(--wire);
+    background-color: rgb(255 214 10 / 0.04) !important;
+    box-shadow: none;
+    border-color: transparent;
+  }
+
+  .mock[data-state="wire"] [data-part] > *,
+  .mock[data-state="empty"] [data-part] > * {
+    opacity: 0;
+  }
+
+  .mock[data-state="wire"] [data-part]::after {
+    opacity: 1;
+  }
+
+  .mock[data-state="wire"] .m-art {
+    background: rgb(255 214 10 / 0.04);
+  }
+</style>

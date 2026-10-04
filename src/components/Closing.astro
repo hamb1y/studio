@@ -1,0 +1,53 @@
+---
+import ArrowUpRight from "@lucide/astro/icons/arrow-up-right";
+import { FIVERR_URL } from "../config";
+---
+
+<section class="closing" aria-labelledby="closing-title">
+  <div class="wrap closing-inner">
+    <div class="closing-copy">
+      <h2 id="closing-title">Not sure which package?</h2>
+      <p>Message me on Fiverr and describe the site you want. I'll ask a few questions and send you a price.</p>
+    </div>
+    <a class="btn btn--primary" href={FIVERR_URL} rel="noopener" target="_blank">
+      Message me on Fiverr <ArrowUpRight aria-hidden="true" />
+    </a>
+  </div>
+</section>
+
+<style>
+  .closing {
+    padding-block: clamp(56px, 8vw, 104px);
+    border-top: 1px solid var(--line);
+  }
+
+  .closing-inner {
+    display: grid;
+    gap: 24px;
+    justify-items: start;
+  }
+
+  .closing-copy {
+    display: grid;
+    gap: 12px;
+  }
+
+  h2 {
+    font-size: var(--t-2xl);
+    max-width: 18ch;
+  }
+
+  p {
+    max-width: 50ch;
+    color: var(--fg-2);
+    font-size: var(--t-md);
+  }
+
+  @media (min-width: 900px) {
+    .closing-inner {
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: end;
+      gap: 48px;
+    }
+  }
+</style>

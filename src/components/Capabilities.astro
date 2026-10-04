@@ -1,0 +1,77 @@
+---
+const items = [
+  {
+    title: "Fast",
+    body: "Pages are plain HTML with compressed images and very little script. They open quickly on a phone with one bar of signal.",
+  },
+  {
+    title: "Fits every screen",
+    body: "I check every page at phone, tablet, laptop and desktop widths before you see it, and fix whatever breaks.",
+  },
+  {
+    title: "Designed for you",
+    body: "The layout starts from your content and your brand. There's no bought theme underneath with your logo swapped in.",
+  },
+  {
+    title: "You can edit it",
+    body: "With a CMS you change text and photos in your browser, so a typo doesn't mean messaging me. Brand also lets you rearrange sections.",
+  },
+  {
+    title: "Custom parts",
+    body: "Price calculators, filters, galleries, donation pages. If the site needs something specific, I build it. The estimator on this page is one.",
+  },
+];
+---
+
+<section class="section" id="capabilities" aria-labelledby="cap-title">
+  <div class="wrap split">
+    <header class="sec-head">
+      <h2 id="cap-title">What you get</h2>
+    </header>
+
+    <dl class="caps">
+      {
+        items.map(({ title, body }) => (
+          <div class="cap">
+            <dt>{title}</dt>
+            <dd>{body}</dd>
+          </div>
+        ))
+      }
+    </dl>
+  </div>
+</section>
+
+<style>
+  .caps {
+    border-top: 1px solid var(--line);
+  }
+
+  .cap {
+    display: grid;
+    gap: 6px 32px;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  dt {
+    font-size: var(--t-lg);
+    font-weight: 700;
+    font-stretch: 85%;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+
+  dd {
+    color: var(--fg-2);
+    max-width: 60ch;
+  }
+
+  @media (min-width: 760px) {
+    .cap {
+      grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
+      align-items: baseline;
+      padding: 24px 0;
+    }
+  }
+</style>

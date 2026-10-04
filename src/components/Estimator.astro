@@ -1,0 +1,1032 @@
+---
+import ArrowUpRight from "@lucide/astro/icons/arrow-up-right";
+import Copy from "@lucide/astro/icons/copy";
+import { FIVERR_URL } from "../config";
+import { ADDONS, CMS_LABELS, FIX_STEPS, PACKAGES, bestQuote, type Selection } from "../data/pricing";
+
+// The page renders with this sample already priced, so the estimator is
+// complete before any script runs.
+const initial: Selection = {
+  pages: 5,
+  forms: 2,
+  cms: 1,
+  artDirection: false,
+  logo: 0,
+  revisions: 2,
+  fixDays: 14,
+  rush: false,
+};
+const q = bestQuote(initial);
+// Shorter names for the segmented buttons so they fit on one line on phones.
+const LOGO_SHORT = ["No logo", "Logo", "Logo + kit"];
+const starter = PACKAGES[0];
+const fixIndex = FIX_STEPS.findIndex((f) => f.days === initial.fixDays);
+const money = (n: number) => `$${n.toLocaleString("en-US")}`;
+---
+
+<section class="section" id="estimate" aria-labelledby="estimate-title">
+  <div class="wrap">
+    <header class="sec-head">
+      <h2 id="estimate-title">Estimate a price</h2>
+      <p class="sec-intro">
+        Set what you need. It starts from the cheapest package that fits and adds extras on top. The real price is
+        agreed in a custom offer on Fiverr.
+      </p>
+    </header>
+
+    <div class="est" data-est>
+      <form class="controls" data-controls aria-label="Estimate options">
+        <div class="presets" role="group" aria-label="Start from a package">
+          <span class="presets-label mono">Start from</span>
+          {
+            PACKAGES.map((p) => (
+              <button type="button" class="preset" data-preset={p.id}>
+                {p.name}
+              </button>
+            ))
+          }
+        </div>
+
+        <div class="row">
+          <div class="row-label">
+            <label for="est-pages">Pages</label>
+            <p class="hint mono"><span data-inc="pages">{starter.pages} in {starter.name}</span>, then ${ADDONS.page} each</p>
+          </div>
+          <div class="row-control range">
+            <input
+              id="est-pages"
+              name="pages"
+              type="range"
+              min="1"
+              max="30"
+              step="1"
+              value={initial.pages}
+              data-range
+            />
+            <output for="est-pages" class="range-value mono" data-out="pages">{initial.pages}</output>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="row-label">
+            <label for="est-forms">Forms</label>
+            <p class="hint mono"><span data-inc="forms">{starter.forms} in {starter.name}</span>, then ${ADDONS.form} each</p>
+          </div>
+          <div class="row-control range">
+            <input
+              id="est-forms"
+              name="forms"
+              type="range"
+              min="0"
+              max="10"
+              step="1"
+              value={initial.forms}
+              data-range
+            />
+            <output for="est-forms" class="range-value mono" data-out="forms">{initial.forms}</output>
+          </div>
+        </div>
+
+        <fieldset class="row">
+          <legend class="row-label">
+            <span class="legend-text">CMS for editing</span>
+            <span class="hint mono">text &amp; photos ${ADDONS.cms[1]} · full ${ADDONS.cms[2]}</span>
+          </legend>
+          <div class="row-control seg" role="presentation">
+            {
+              CMS_LABELS.map((label, i) => (
+                <label class="seg-opt">
+                  <input type="radio" name="cms" value={i} checked={i === initial.cms} />
+                  <span>{label}</span>
+                </label>
+              ))
+            }
+          </div>
+        </fieldset>
+
+        <div class="row row--switch">
+          <div class="row-label">
+            <label for="est-art">Art direction</label>
+            <p class="hint mono">type, colour and layout · ${ADDONS.artDirection}</p>
+          </div>
+          <div class="row-control">
+            <label class="switch">
+              <input id="est-art" name="art" type="checkbox" role="switch" checked={initial.artDirection} />
+              <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
+            </label>
+          </div>
+        </div>
+
+        <fieldset class="row">
+          <legend class="row-label">
+            <span class="legend-text">Logo</span>
+            <span class="hint mono">logo ${ADDONS.logo[1]} · logo and brand kit ${ADDONS.logo[2]}</span>
+          </legend>
+          <div class="row-control seg" role="presentation">
+            {
+              LOGO_SHORT.map((label, i) => (
+                <label class="seg-opt">
+                  <input type="radio" name="logo" value={i} checked={i === initial.logo} />
+                  <span>{label}</span>
+                </label>
+              ))
+            }
+          </div>
+        </fieldset>
+
+        <div class="row">
+          <div class="row-label">
+            <label for="est-rev">Revision rounds</label>
+            <p class="hint mono"><span data-inc="revisions">{starter.revisions} in {starter.name}</span>, then ${ADDONS.revision} each</p>
+          </div>
+          <div class="row-control range">
+            <input
+              id="est-rev"
+              name="revisions"
+              type="range"
+              min="2"
+              max="8"
+              step="1"
+              value={initial.revisions}
+              data-range
+            />
+            <output for="est-rev" class="range-value mono" data-out="revisions">{initial.revisions}</output>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="row-label">
+            <label for="est-fix">Fixes after launch</label>
+            <p class="hint mono"><span data-inc="fixDays">{FIX_STEPS.find((f) => f.days === starter.fixDays)!.label} in {starter.name}</span>, then ${ADDONS.supportMonth} a month</p>
+          </div>
+          <div class="row-control range">
+            <input
+              id="est-fix"
+              name="fix"
+              type="range"
+              min="0"
+              max={FIX_STEPS.length - 1}
+              step="1"
+              value={fixIndex}
+              aria-valuetext={FIX_STEPS[fixIndex].label}
+              data-range
+            />
+            <output for="est-fix" class="range-value range-value--wide mono" data-out="fix"
+              >{FIX_STEPS[fixIndex].label}</output
+            >
+          </div>
+        </div>
+
+        <div class="row row--switch">
+          <div class="row-label">
+            <label for="est-rush">Rush delivery</label>
+            <p class="hint mono">faster delivery · +{Math.round((ADDONS.rushMultiplier - 1) * 100)}%</p>
+          </div>
+          <div class="row-control">
+            <label class="switch">
+              <input id="est-rush" name="rush" type="checkbox" role="switch" checked={initial.rush} />
+              <span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span>
+            </label>
+          </div>
+        </div>
+
+        <a class="minibar is-hidden" href="#est-result" data-minibar>
+          <span class="mono">Estimate</span>
+          <strong data-mini-total>{money(q.total)}</strong>
+          <span class="minibar-go">See breakdown</span>
+        </a>
+      </form>
+
+      <aside class="result" id="est-result" aria-labelledby="est-result-title">
+        <div class="result-inner">
+          <div class="result-top">
+            <h3 id="est-result-title" class="mono">Estimate</h3>
+          </div>
+          <p class="total" aria-hidden="true">
+            <span class="total-num" data-total>{money(q.total)}</span>
+            <span class="delta mono" data-delta></span>
+          </p>
+          <p class="visually-hidden" aria-live="polite" data-live>Estimated total {money(q.total)}</p>
+          <p class="basis">
+            Priced as <strong data-basis>{q.base.name} package{q.lines.length > 1 ? " + add-ons" : ""}</strong>
+          </p>
+
+          <dl class="lines" data-lines>
+            {
+              q.lines.map((l) => (
+                <div>
+                  <dt>{l.label}</dt>
+                  <dd>{money(l.amount)}</dd>
+                </div>
+              ))
+            }
+          </dl>
+
+          <p class="fine">
+            A rough figure. The actual price comes in a custom offer on Fiverr after we've talked. Hosting and form
+            management aren't included.
+          </p>
+
+          <div class="result-actions">
+            <a class="btn btn--primary btn--block" href={FIVERR_URL} rel="noopener" target="_blank">
+              Ask for an offer on Fiverr <ArrowUpRight aria-hidden="true" />
+            </a>
+            <button type="button" class="btn btn--block copy" data-copy>
+              <Copy aria-hidden="true" /> <span data-copy-label>Copy my choices</span>
+            </button>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { ADDONS, CMS_LABELS, FIX_STEPS, LOGO_LABELS, PACKAGES, bestQuote } from "../data/pricing";
+  import type { CmsLevel, LogoLevel, Selection } from "../data/pricing";
+
+  const root = document.querySelector<HTMLElement>("[data-est]");
+  if (root) initEstimator(root);
+
+  function initEstimator(root: HTMLElement) {
+    const form = root.querySelector<HTMLFormElement>("[data-controls]")!;
+    const totalEl = root.querySelector<HTMLElement>("[data-total]")!;
+    const miniEl = root.querySelector<HTMLElement>("[data-mini-total]")!;
+    const deltaEl = root.querySelector<HTMLElement>("[data-delta]")!;
+    const liveEl = root.querySelector<HTMLElement>("[data-live]")!;
+    const basisEl = root.querySelector<HTMLElement>("[data-basis]")!;
+    const linesEl = root.querySelector<HTMLElement>("[data-lines]")!;
+    const copyBtn = root.querySelector<HTMLButtonElement>("[data-copy]")!;
+    const copyLabel = root.querySelector<HTMLElement>("[data-copy-label]")!;
+    const minibar = root.querySelector<HTMLElement>("[data-minibar]")!;
+    const result = root.querySelector<HTMLElement>(".result")!;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+    const money = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
+    const input = (name: string) => form.elements.namedItem(name) as HTMLInputElement;
+
+    function read(): Selection {
+      const data = new FormData(form);
+      return {
+        pages: Number(data.get("pages")),
+        forms: Number(data.get("forms")),
+        cms: Number(data.get("cms")) as CmsLevel,
+        artDirection: input("art").checked,
+        logo: Number(data.get("logo")) as LogoLevel,
+        revisions: Number(data.get("revisions")),
+        fixDays: FIX_STEPS[Number(data.get("fix"))].days,
+        rush: input("rush").checked,
+      };
+    }
+
+    // Paint the filled part of each slider.
+    function paintRanges() {
+      form.querySelectorAll<HTMLInputElement>("[data-range]").forEach((r) => {
+        const min = Number(r.min);
+        const max = Number(r.max);
+        const p = ((Number(r.value) - min) / (max - min)) * 100;
+        r.style.setProperty("--p", `${p}%`);
+      });
+    }
+
+    let shown = 0;
+    let anim = 0;
+    let lastTotal = -1;
+    let liveTimer = 0;
+
+    function animateTotal(to: number) {
+      cancelAnimationFrame(anim);
+      if (reduceMotion.matches || shown === 0) {
+        shown = to;
+        totalEl.textContent = money(to);
+        miniEl.textContent = money(to);
+        return;
+      }
+      const from = shown;
+      const start = performance.now();
+      const dur = 520;
+      const step = (now: number) => {
+        const t = Math.min(1, (now - start) / dur);
+        const e = 1 - Math.pow(1 - t, 3);
+        shown = from + (to - from) * e;
+        totalEl.textContent = money(shown);
+        miniEl.textContent = money(shown);
+        if (t < 1) anim = requestAnimationFrame(step);
+      };
+      anim = requestAnimationFrame(step);
+    }
+
+    function showDelta(diff: number) {
+      if (!diff || reduceMotion.matches) return;
+      deltaEl.textContent = `${diff > 0 ? "+" : "−"}${money(Math.abs(diff))}`;
+      deltaEl.classList.toggle("is-down", diff < 0);
+      deltaEl.classList.remove("is-on");
+      void deltaEl.offsetWidth; // restart the animation
+      deltaEl.classList.add("is-on");
+    }
+
+    function render() {
+      const s = read();
+      const q = bestQuote(s);
+
+      form.querySelector<HTMLElement>('[data-out="pages"]')!.textContent = String(s.pages);
+      form.querySelector<HTMLElement>('[data-out="forms"]')!.textContent = String(s.forms);
+      form.querySelector<HTMLElement>('[data-out="revisions"]')!.textContent = String(s.revisions);
+      const fixLabel = FIX_STEPS[Number(input("fix").value)].label;
+      form.querySelector<HTMLElement>('[data-out="fix"]')!.textContent = fixLabel;
+      input("fix").setAttribute("aria-valuetext", fixLabel);
+      paintRanges();
+
+      basisEl.textContent = `${q.base.name} package${q.lines.length > 1 ? " + add-ons" : ""}`;
+      // "Included" hints follow the package the estimate is priced on.
+      form.querySelectorAll<HTMLElement>("[data-inc]").forEach((el) => {
+        const key = el.dataset.inc as "pages" | "forms" | "revisions" | "fixDays";
+        const n = key === "fixDays" ? FIX_STEPS.find((f) => f.days === q.base.fixDays)!.label : q.base[key];
+        el.textContent = `${n} in ${q.base.name}`;
+      });
+      const rows = [...q.lines];
+      if (q.rushAmount) rows.push({ label: "Rush delivery (+40%)", amount: q.rushAmount });
+      linesEl.replaceChildren(
+        ...rows.map((l) => {
+          const div = document.createElement("div");
+          const dt = document.createElement("dt");
+          const dd = document.createElement("dd");
+          dt.textContent = l.label;
+          dd.textContent = money(l.amount);
+          div.append(dt, dd);
+          return div;
+        }),
+      );
+
+      if (lastTotal >= 0) showDelta(q.total - lastTotal);
+      lastTotal = q.total;
+      animateTotal(q.total);
+
+      clearTimeout(liveTimer);
+      liveTimer = window.setTimeout(() => {
+        liveEl.textContent = `Estimated total ${money(q.total)}, priced as ${basisEl.textContent}`;
+      }, 500);
+
+      // Presets light up when the controls match a package exactly.
+      root.querySelectorAll<HTMLButtonElement>("[data-preset]").forEach((b) => {
+        const p = PACKAGES.find((x) => x.id === b.dataset.preset)!;
+        const match =
+          s.pages === p.pages &&
+          s.forms === p.forms &&
+          s.cms === p.cms &&
+          s.artDirection === p.artDirection &&
+          s.logo === p.logo &&
+          s.revisions === p.revisions &&
+          s.fixDays === p.fixDays &&
+          !s.rush;
+        b.setAttribute("aria-pressed", String(match));
+      });
+
+      return { s, q };
+    }
+
+    function applyPreset(id: string) {
+      const p = PACKAGES.find((x) => x.id === id);
+      if (!p) return;
+      input("pages").value = String(p.pages);
+      input("forms").value = String(p.forms);
+      form.querySelectorAll<HTMLInputElement>('input[name="cms"]').forEach((r) => (r.checked = Number(r.value) === p.cms));
+      input("art").checked = p.artDirection;
+      form.querySelectorAll<HTMLInputElement>('input[name="logo"]').forEach((r) => (r.checked = Number(r.value) === p.logo));
+      input("revisions").value = String(p.revisions);
+      const idx = FIX_STEPS.findIndex((f) => f.days >= p.fixDays);
+      input("fix").value = String(Math.max(0, idx));
+      input("rush").checked = false;
+      render();
+    }
+
+    function summary() {
+      const { s, q } = render();
+      const lines = [
+        "Website estimate (studio.rishimalnad.dev)",
+        `- Pages: ${s.pages}`,
+        `- Forms: ${s.forms}`,
+        `- CMS: ${CMS_LABELS[s.cms]}`,
+        `- Art direction: ${s.artDirection ? "Yes" : "No"}`,
+        `- Logo: ${LOGO_LABELS[s.logo]}`,
+        `- Revision rounds: ${s.revisions}`,
+        `- Fixes after launch: ${FIX_STEPS.find((f) => f.days === s.fixDays)?.label}`,
+        `- Rush delivery: ${s.rush ? `Yes (+${Math.round((ADDONS.rushMultiplier - 1) * 100)}%)` : "No"}`,
+        `Estimated total: ${money(q.total)} (${q.base.name} package${q.lines.length > 1 ? " + add-ons" : ""})`,
+      ];
+      return lines.join("\n");
+    }
+
+    async function copySummary() {
+      const text = summary();
+      let ok = false;
+      try {
+        await navigator.clipboard.writeText(text);
+        ok = true;
+      } catch {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.append(ta);
+        ta.select();
+        try {
+          ok = document.execCommand("copy");
+        } catch {
+          ok = false;
+        }
+        ta.remove();
+      }
+      copyLabel.textContent = ok ? "Copied. Paste it into your Fiverr message." : "Couldn't copy. Select the lines above.";
+      window.setTimeout(() => (copyLabel.textContent = "Copy my choices"), 3200);
+    }
+
+    form.addEventListener("submit", (e) => e.preventDefault());
+    form.addEventListener("input", render);
+    form.addEventListener("change", render);
+    root.querySelectorAll<HTMLButtonElement>("[data-preset]").forEach((b) =>
+      b.addEventListener("click", () => applyPreset(b.dataset.preset!)),
+    );
+    copyBtn.addEventListener("click", copySummary);
+
+    // The phone total bar shows while the controls are on screen and the full
+    // result panel is not.
+    let controlsOnScreen = false;
+    let resultOnScreen = false;
+    const syncMinibar = () => minibar.classList.toggle("is-hidden", !controlsOnScreen || resultOnScreen);
+    new IntersectionObserver(([entry]) => {
+      controlsOnScreen = entry.isIntersecting;
+      syncMinibar();
+    }).observe(form);
+    new IntersectionObserver(
+      ([entry]) => {
+        resultOnScreen = entry.isIntersecting;
+        syncMinibar();
+      },
+      { threshold: 0.15 },
+    ).observe(result);
+
+    render();
+    root.classList.add("is-ready");
+  }
+</script>
+
+<style>
+  .est {
+    display: grid;
+    gap: 32px;
+    align-items: start;
+  }
+
+  /* ---------- Controls ---------- */
+
+  .controls {
+    display: grid;
+    min-width: 0;
+    border-top: 1px solid var(--line);
+    container-type: inline-size;
+  }
+
+  .presets {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .presets-label {
+    grid-column: 1 / -1;
+    color: var(--fg-3);
+  }
+
+  @container (min-width: 480px) {
+    .presets {
+      grid-template-columns: repeat(4, max-content);
+      align-items: center;
+    }
+
+    .presets-label {
+      grid-column: auto;
+      margin-right: 6px;
+    }
+  }
+
+  .preset {
+    min-height: 36px;
+    padding: 0 14px;
+    border: 1px solid var(--line-2);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--fg-2);
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition:
+      border-color 0.2s var(--ease),
+      color 0.2s var(--ease),
+      background-color 0.2s var(--ease);
+  }
+
+  .preset:hover {
+    color: var(--fg);
+    border-color: var(--fg-3);
+  }
+
+  .preset[aria-pressed="true"] {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+
+  .row {
+    display: grid;
+    gap: 12px 24px;
+    margin: 0;
+    padding: 18px 0;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    min-width: 0;
+  }
+
+  fieldset.row {
+    padding-inline: 0;
+  }
+
+  .row-label {
+    display: grid;
+    gap: 4px;
+    padding: 0;
+    float: left; /* keeps legend inside the fieldset's grid flow */
+    width: 100%;
+  }
+
+  .row-label label,
+  .legend-text {
+    font-weight: 600;
+    font-size: 1rem;
+  }
+
+  .hint {
+    color: var(--fg-3);
+    line-height: 1.5;
+  }
+
+  /* On/off rows keep the switch beside the label at every width. */
+  .row--switch {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .row-control {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+    clear: both;
+  }
+
+  /* Range sliders */
+  .range input {
+    --p: 50%;
+    flex: 1;
+    min-width: 0;
+    height: 28px;
+    margin: 0;
+    background: transparent;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+  }
+
+  .range input::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 2px;
+    background: linear-gradient(to right, var(--accent) var(--p), var(--line-2) var(--p));
+  }
+
+  .range input::-moz-range-track {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--line-2);
+  }
+
+  .range input::-moz-range-progress {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--accent);
+  }
+
+  .range input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    margin-top: -8px;
+    border: 3px solid var(--bg);
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
+    transition: transform 0.2s var(--ease);
+  }
+
+  .range input::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border: 3px solid var(--bg);
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+
+  .range input:active::-webkit-slider-thumb {
+    transform: scale(1.15);
+  }
+
+  .range input:focus-visible {
+    outline: none;
+  }
+
+  .range input:focus-visible::-webkit-slider-thumb {
+    box-shadow:
+      0 0 0 1px var(--accent),
+      0 0 0 5px var(--accent-line);
+  }
+
+  .range input:focus-visible::-moz-range-thumb {
+    box-shadow:
+      0 0 0 1px var(--accent),
+      0 0 0 5px var(--accent-line);
+  }
+
+  .range-value {
+    min-width: 3.2em;
+    padding: 6px 8px;
+    border: 1px solid var(--line-2);
+    border-radius: 5px;
+    text-align: center;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .range-value--wide {
+    min-width: 7.2em;
+  }
+
+  /* Segmented radio groups */
+  .seg {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    padding: 3px;
+    border: 1px solid var(--line-2);
+    border-radius: 8px;
+    background: var(--bg-1);
+  }
+
+  .seg-opt {
+    position: relative;
+    display: block;
+    min-width: 0;
+  }
+
+  .seg-opt input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .seg-opt span {
+    display: grid;
+    place-items: center;
+    min-height: 38px;
+    padding: 6px 8px;
+    border-radius: 5px;
+    color: var(--fg-2);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.2;
+    text-align: center;
+    transition:
+      background-color 0.2s var(--ease),
+      color 0.2s var(--ease);
+    pointer-events: none;
+  }
+
+  .seg-opt:hover span {
+    color: var(--fg);
+  }
+
+  .seg-opt input:checked + span {
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 600;
+  }
+
+  .seg-opt input:focus-visible + span {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* Switches */
+  .switch {
+    position: relative;
+    display: inline-flex;
+    cursor: pointer;
+  }
+
+  .switch input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .switch-track {
+    position: relative;
+    width: 50px;
+    height: 28px;
+    border: 1px solid var(--line-2);
+    border-radius: 999px;
+    background: var(--bg-2);
+    transition:
+      background-color 0.25s var(--ease),
+      border-color 0.25s var(--ease);
+    pointer-events: none;
+  }
+
+  .switch-thumb {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--fg-3);
+    transition:
+      transform 0.25s var(--ease),
+      background-color 0.25s var(--ease);
+  }
+
+  .switch input:checked + .switch-track {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .switch input:checked + .switch-track .switch-thumb {
+    transform: translateX(22px);
+    background: var(--accent-ink);
+  }
+
+  .switch input:focus-visible + .switch-track {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+
+  /* Phone-only sticky total */
+  .minibar {
+    position: fixed;
+    left: var(--gutter);
+    right: var(--gutter);
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 56px;
+    padding: 8px 16px;
+    border: 1px solid var(--accent-line);
+    border-radius: var(--radius);
+    background: var(--bg-2);
+    box-shadow: 0 12px 32px -8px rgb(0 0 0 / 0.8);
+    text-decoration: none;
+    transition:
+      opacity 0.25s var(--ease),
+      transform 0.25s var(--ease);
+  }
+
+  .minibar strong {
+    font-family: var(--font-mono);
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .minibar-go {
+    margin-left: auto;
+    color: var(--fg-2);
+  }
+
+  .minibar:global(.is-hidden) {
+    opacity: 0;
+    transform: translateY(8px);
+    pointer-events: none;
+    visibility: hidden;
+    transition:
+      opacity 0.25s var(--ease),
+      transform 0.25s var(--ease),
+      visibility 0s linear 0.25s;
+  }
+
+  /* ---------- Result ---------- */
+
+  .result {
+    min-width: 0;
+  }
+
+  .result-inner {
+    display: grid;
+    gap: 18px;
+    padding: clamp(22px, 3vw, 32px);
+    border: 1px solid var(--line-2);
+    border-radius: var(--radius);
+    background: var(--bg-1);
+  }
+
+  .result-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .result-top h3 {
+    color: var(--fg-2);
+    font-size: var(--t-mono);
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+
+
+  .total {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .total-num {
+    font-family: var(--font-mono);
+    font-size: clamp(3rem, 2.2rem + 3.4vw, 4.75rem);
+    font-weight: 500;
+    font-stretch: 78%;
+    letter-spacing: -0.07em;
+    line-height: 1;
+    color: var(--fg);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .delta {
+    margin-top: 6px;
+    padding: 4px 7px;
+    border-radius: 4px;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 600;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .delta:global(.is-down) {
+    background: var(--bg-3);
+    color: var(--fg);
+  }
+
+  .delta:global(.is-on) {
+    animation: delta 1.3s var(--ease) forwards;
+  }
+
+  @keyframes delta {
+    0% {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    15% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    70% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+  }
+
+  .basis {
+    color: var(--fg-2);
+    font-size: 0.9375rem;
+  }
+
+  .basis strong {
+    color: var(--fg);
+    font-weight: 600;
+  }
+
+  .lines {
+    display: grid;
+    border-top: 1px solid var(--line);
+  }
+
+  .lines :global(div) {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--line);
+    font-size: 0.9375rem;
+  }
+
+  .lines :global(dt) {
+    color: var(--fg-2);
+  }
+
+  .lines :global(dd) {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .fine {
+    color: var(--fg-3);
+    font-size: 0.8125rem;
+    line-height: 1.5;
+  }
+
+  .result-actions {
+    display: grid;
+    gap: 10px;
+  }
+
+  .result-actions .btn {
+    white-space: normal;
+    text-align: center;
+  }
+
+  .copy {
+    --btn-border: var(--line-2);
+    font-weight: 500;
+    font-size: 0.875rem;
+  }
+
+  .copy:hover :global(svg) {
+    transform: none;
+  }
+
+  @media (pointer: coarse) {
+    .range input {
+      height: 44px;
+    }
+
+    .seg-opt span {
+      min-height: 44px;
+    }
+
+    .preset {
+      min-height: 42px;
+    }
+
+    /* Grow the switch's tap area without changing how it looks. */
+    .switch {
+      padding: 8px;
+      margin: -8px;
+    }
+  }
+
+  /* Label and control side by side once the controls column is wide enough. */
+  @container (min-width: 620px) {
+    .row,
+    .row--switch {
+      grid-template-columns: minmax(0, 11fr) minmax(0, 13fr);
+      align-items: center;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .est {
+      grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+      gap: clamp(40px, 4vw, 64px);
+    }
+
+    .result {
+      position: sticky;
+      top: calc(var(--header-h) + 24px);
+    }
+
+    .minibar {
+      display: none;
+    }
+  }
+</style>
